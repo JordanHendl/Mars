@@ -52,6 +52,12 @@ namespace mars
        */
       static Reference<Type> reference( const Key& key ) ;
       
+      /** Static method to check and see if a type is in the manager.
+       * @param key The key to look for.
+       * @return Whether or not there is a value at the key.
+       */
+      static bool has( const Key& key ) ;
+      
       /** Static method to create an object and insert it into this object.
        * @param key The key to insert the object into, if possible.
        * @param params The parameters to use for initializing the object.
@@ -110,6 +116,24 @@ namespace mars
     }
     
     return ref ;
+  }
+  
+  template<typename Key, typename Type>
+  bool Manager<Key, Type>::has( const Key& key )
+  {
+    using Manager = Manager<Key, Type> ;
+    Reference<Type> ref ;
+    
+    const auto iter = Manager::map.find( key ) ;
+    
+    if( iter != Manager::map.end() )
+    {
+      return true ;
+    }
+    else
+    {
+      return false ;
+    }
   }
   
   template<typename Key, typename Type>

@@ -78,6 +78,11 @@ namespace mars
        */
       inline void initialize( nyx::NggFile& file, unsigned gpu ) ;
       
+      /** Method to check whether this object has been initialized.
+       * @return Whether or not this object has been initialized.
+       */
+      inline bool initialized() const ;
+      
       /** Method to draw this model to the input pipeline.
        * @param pipeline The pipeline to use for rendering.
        * @param chain The chain to record the draw command to.
@@ -175,6 +180,12 @@ namespace mars
     chain.reset      () ;
   }
   
+  template<typename Framework>
+  bool Model<Framework>::initialized() const
+  {
+    return !this->meshes.empty() ;
+  }
+
   template<typename Framework>
   void Model<Framework>::draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& draw )
   {

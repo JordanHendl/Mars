@@ -1,10 +1,12 @@
 SET( MARS_LIBRARY_SOURCES 
      Factory.cpp
+     Manager.cpp
      Mars.cpp
    )
       
 SET( MARS_LIBRARY_HEADERS
      Factory.h
+     Manager.h
      Mars.h
    )
 
