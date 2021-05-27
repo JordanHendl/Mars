@@ -15,18 +15,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* 
- * File:   Test.cpp
- * Author: jhendl
- *
- * Created on April 16, 2021, 11:57 PM
- */
-
-#include "Model.h"
-#include <Athena/Manager.h>
-
-int main()
-{
-  return 0;
-}
-
+#include "TextureArray.h"

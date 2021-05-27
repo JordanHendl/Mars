@@ -36,7 +36,7 @@ OPTION( RUN_TESTS     "Whether or not the Mars tests should be run."   ON  )
 OPTION( BUILD_DOCS    "Whether or not to generate documentation."      OFF )
 OPTION( BUILD_RELEASE "Whether or not the to build for release."       OFF )
 
-PROJECT( mars CXX )
+PROJECT( Mars CXX )
 
 MESSAGE( INFO "Mars Library Prebuild" ) 
 MESSAGE( INFO " " ) 
@@ -76,10 +76,10 @@ SET( REVISION      "0"     CACHE STRING "The revision of this build."           
 SET( GENERATOR     "DEB"   CACHE STRING "The Package Generator to use for this build." )
 
 IF( WIN32 )
-  SET( CMAKE_PREFIX_PATH "C:/Program Files" CACHE STRING "The default path to look for dependancies." )
-  SET( INSTALL_LOCATION "C:/Program Files" CACHE STRING "The default NSIS install location of this library" )
+  SET( CMAKE_PREFIX_PATH "C:\\Program Files\\Athena;C:\\Program Files\\NyxGPU;" CACHE STRING "The default path to look for dependancies."        )
+  SET( INSTALL_LOCATION  "C:\\Program Files"                                    CACHE STRING "The default NSIS install location of this library" )
 ELSEIF( UNIX AND NOT APPLE )
-  SET( CMAKE_PREFIX_PATH "/usr/local/lib/athena;/usr/local/lib/nyxgpu;/usr/lib;/usr/local/lib/nyxgpu" CACHE STRING "The default path to look for dependancies." )
+  SET( CMAKE_PREFIX_PATH "/usr/local/lib/Athena;/usr/local/lib/NyxGPU;/usr/lib;" CACHE STRING "The default path to look for dependancies." )
   SET( INSTALL_LOCATION  "/usr/local/lib" CACHE STRING "The install location of this library." ) 
 ENDIF()
 
@@ -133,12 +133,19 @@ MESSAGE( INFO  "├─GNU:               ${GNU}"               )
 MESSAGE( INFO  "└─MSVC:              ${MSVC}"              )
 MESSAGE( INFO " " ) 
 
-INCLUDE( KPackage ) 
 
-SET( BIN_DIR           "bin"                                 )
-SET( INCLUDE_DIR       "include"                             )
-SET( LIB_DIR           "lib64"                               )
-SET( DOC_DIR           "doc"                                 )
+IF( UNIX )
+  SET( BIN_DIR     bin     )
+  SET( INCLUDE_DIR include )
+  SET( LIB_DIR     lib64   )
+  SET( DOC_DIR     doc     )
+ELSE()
+  SET( BIN_DIR     "." )
+  SET( INCLUDE_DIR "." )
+  SET( LIB_DIR     "." )
+  SET( DOC_DIR     "." )
+ENDIF()
+
 SET( CONFIG_DIR         ${CMAKE_PROJECT_NAME}                )
 SET( DOXYGEN_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/doc      )
 SET( BUILD_DIR          ${CMAKE_BINARY_DIR}                  )
@@ -166,6 +173,14 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 INCLUDE ( BuildDocs )
 
+SET( CPACK_COMPONENTS_ALL                 release devel                                                                   )
+SET( CPACK_COMPONENT_DEVEL_DISPLAY_NAME   "${CMAKE_PROJECT_NAME}-devel"                                                   )
+SET( CPACK_COMPONENT_RELEASE_DISPLAY_NAME "${CMAKE_PROJECT_NAME}-release"                                                 )
+SET( CPACK_COMPONENT_DEVEL_DESCRIPTION    "Development Headers & Runtime Libraries for the ${CMAKE_PROJECT_NAME} library" )
+SET( CPACK_COMPONENT_RELEASE_DESCRIPTION  "Runtime Libraries for the ${CMAKE_PROJECT_NAME} library"                       )
+SET( CPACK_COMPONENT_DEVEL_DEPENDS        release                                                                         )
+INCLUDE( KPackage ) 
+
 ADD_SUBDIRECTORY( src )
 
-INSTALL( EXPORT Mars FILE MarsConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT dev )
+INSTALL( EXPORT Mars FILE MarsConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT devel )
