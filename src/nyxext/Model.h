@@ -23,12 +23,13 @@
  */
 
 #pragma once
-#include "nyxgpu/NggFile.h"
-#include "nyxgpu/library/Array.h"
-#include "nyxgpu/library/Chain.h"
-#include "nyxgpu/library/Renderer.h"
+#include "NyxGPU/NggFile.h"
+#include "NyxGPU/library/Array.h"
+#include "NyxGPU/library/Chain.h"
+#include "NyxGPU/library/Renderer.h"
 #include <vector>
 #include <string>
+#include <map>
 
 namespace mars
 {
@@ -40,12 +41,12 @@ namespace mars
   template<typename Framework>
   class Mesh
   {
-    template<typename Framework1>
-    friend class Model ;
-
-    std::string                                 name     ;
-    nyx::Array<Framework, nyx::NggFile::Vertex> vertices ;
-    nyx::Array<Framework, unsigned            > indices  ;
+    public:
+      std::string                                 name       ;
+      nyx::Array<Framework, nyx::NggFile::Vertex> vertices   ;
+      nyx::Array<Framework, unsigned            > indices    ;
+      nyx::Array<Framework, unsigned            > d_textures ;
+      std::map<std::string, unsigned            > textures   ; 
   };
 
   /** Template model class. Acts as a 3D model, and provides functionality for drawing.
@@ -89,18 +90,29 @@ namespace mars
        */
       inline void draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& chain ) ;
       
+      /** Method to set the textures of a specific mesh.
+       * @param mesh The ID of mesh of this model to apply the texture to.
+       * @param texture_name The name to associate with the texture.
+       * @param texture_id The id to associate with the texture. Used to load it later.
+       */
+      inline void setTexture( unsigned mesh, const char* texture_name, unsigned texture_id ) ;
+      
+      inline std::vector<Mesh<Framework>*>& meshes() ;
+      
+      inline const std::vector<Mesh<Framework>*>& meshes() const ;
+
       /** Method to reset and deallocate all data.
        */
       inline void reset() ;
       
     private:
-      std::vector<Mesh<Framework>> meshes ;
+      std::vector<Mesh<Framework>*> h_meshes ;
   };
   
   template<typename Framework>
   Model<Framework>::Model()
   {
-    this->meshes = {} ;
+    this->h_meshes = {} ;
   }
   
   template<typename Framework>
@@ -111,22 +123,38 @@ namespace mars
 
     file.load( model_path ) ;
     
-    this->meshes.resize( file.meshCount() ) ;
-    chain.initialize( gpu, nyx::ChainType::Compute ) ;
-    for( unsigned index = 0; index < file.meshCount(); index++ )
+    if( file.meshCount() != 0 )
     {
-      auto& mesh = this->meshes[ index ] ;
+      this->h_meshes.reserve( file.meshCount() ) ;
+      chain.initialize( gpu, nyx::ChainType::Compute ) ;
+      for( unsigned index = 0; index < file.meshCount(); index++ )
+      {
+        Mesh<Framework>* mesh = new Mesh<Framework>() ;
+        
+        this->h_meshes.push_back( mesh ) ;
+        
+        mesh->vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
+        mesh->indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
+        
+        mesh->name = std::string( file.mesh( index ).name() ) ;
+        chain.copy( file.mesh( index ).vertices(), mesh->vertices ) ;
+        chain.submit     () ;
+        chain.synchronize() ;
+        chain.copy( file.mesh( index ).indices (), mesh->indices  ) ;
+        chain.submit     () ;
+        chain.synchronize() ;
+      }
       
-      mesh.vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
-      mesh.indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
-      
-      chain.copy( file.mesh( index ).vertices(), mesh.vertices ) ;
-      chain.copy( file.mesh( index ).indices (), mesh.indices  ) ;
+      chain.submit     () ;
+      chain.synchronize() ;
+      chain.reset      () ;
+    }
+    else
+    {
+      // TODO error.
     }
     
-    chain.submit     () ;
-    chain.synchronize() ;
-    chain.reset      () ;
+    file.reset() ;
   }
   
   template<typename Framework>
@@ -136,62 +164,100 @@ namespace mars
     nyx::Chain<Framework> chain ;
 
     file.load( bytes, size ) ;
-    
-    this->meshes.resize( file.meshCount() ) ;
-    chain.initialize( gpu, nyx::ChainType::Compute ) ;
-
-    for( unsigned index = 0; index < file.meshCount(); index++ )
+    if( file.meshCount() != 0 )
     {
-      auto& mesh = this->meshes[ index ] ;
+      this->h_meshes.reserve( file.meshCount() ) ;
+      chain.initialize( gpu, nyx::ChainType::Compute ) ;
+      for( unsigned index = 0; index < file.meshCount(); index++ )
+      {
+        Mesh<Framework>* mesh = new Mesh<Framework>() ;
+        this->h_meshes.push_back( mesh ) ;
+        
+        mesh->name = std::string( file.mesh( index ).name() ) ;
+        mesh->vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
+        mesh->indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
+        
+        chain.copy( file.mesh( index ).vertices(), mesh->vertices ) ;
+        chain.submit     () ;
+        chain.synchronize() ;
+        chain.copy( file.mesh( index ).indices (), mesh->indices  ) ;
+        chain.submit     () ;
+        chain.synchronize() ;
+      }
       
-      mesh.name = file.mesh( index ).name() ;
-      mesh.vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
-      mesh.indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
-      
-      chain.copy( file.mesh( index ).vertices(), mesh.vertices ) ;
-      chain.copy( file.mesh( index ).indices (), mesh.indices  ) ;
+      chain.submit     () ;
+      chain.synchronize() ;
+      chain.reset      () ;
     }
-    
-    chain.submit     () ;
-    chain.synchronize() ;
-    chain.reset      () ;
+    else
+    {
+      // TODO error.
+    }
+    file.reset() ;
   }
   
+  template<typename Framework>
+  void Model<Framework>::setTexture( unsigned mesh, const char* texture_name, unsigned texture_id )
+  {
+    if( mesh < this->h_meshes.size() )
+    {
+      this->h_meshes[ mesh ]->textures[ texture_name ] = texture_id ;
+    }
+  }
   template<typename Framework>
   void Model<Framework>::initialize( nyx::NggFile& file, unsigned gpu )
   {
     nyx::Chain<Framework> chain ;
 
-    this->meshes.resize( file.meshCount() ) ;
+    this->h_meshes.reserve( file.meshCount() ) ;
     chain.initialize( gpu, nyx::ChainType::Compute ) ;
     for( unsigned index = 0; index < file.meshCount(); index++ )
     {
-      auto& mesh = this->meshes[ index ] ;
+      Mesh<Framework>* mesh = new Mesh<Framework>() ;
+      this->h_meshes.push_back( mesh ) ;
       
-      mesh.vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
-      mesh.indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
+      mesh->name = std::string( file.mesh( index ).name() ) ;
+      mesh->vertices.initialize( gpu, file.mesh( index ).numVertices(), false, nyx::ArrayFlags::Vertex ) ;
+      mesh->indices .initialize( gpu, file.mesh( index ).numIndices (), false, nyx::ArrayFlags::Index  ) ;
       
-      chain.copy( file.mesh( index ).vertices(), mesh.vertices ) ;
-      chain.copy( file.mesh( index ).indices (), mesh.indices  ) ;
+      chain.copy( file.mesh( index ).vertices(), mesh->vertices ) ;
+      chain.submit     () ;
+      chain.synchronize() ;
+      chain.copy( file.mesh( index ).indices (), mesh->indices  ) ;
+      chain.submit     () ;
+      chain.synchronize() ;
     }
     
     chain.submit     () ;
     chain.synchronize() ;
     chain.reset      () ;
+    file.reset() ;
+  }
+  
+  template<typename Framework>
+  inline std::vector<Mesh<Framework>*>& Model<Framework>::meshes()
+  {
+    return this->h_meshes ;
+  }
+      
+  template<typename Framework>
+  inline const std::vector<Mesh<Framework>*>& Model<Framework>::meshes() const
+  {
+    return this->h_meshes ;
   }
   
   template<typename Framework>
   bool Model<Framework>::initialized() const
   {
-    return !this->meshes.empty() ;
+    return !this->h_meshes.empty() ;
   }
 
   template<typename Framework>
   void Model<Framework>::draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& draw )
   {
-    for( const auto& mesh : this->meshes )
+    for( const auto& mesh : this->h_meshes )
     {
-      draw.drawIndexed( pipeline, mesh.indices, mesh.vertices ) ;
+      draw.drawIndexed( pipeline, mesh->indices, mesh->vertices ) ;
     }
   }
 }

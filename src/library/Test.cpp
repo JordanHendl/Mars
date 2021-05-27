@@ -22,7 +22,7 @@
  * Created on March 9, 2021, 3:51 PM
  */
 
-#include <athena/Manager.h>
+#include <Athena/Manager.h>
 #include "Factory.h"
 #include "Manager.h"
 #include <string>

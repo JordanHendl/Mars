@@ -16,17 +16,11 @@
  */
 
 /* 
- * File:   Test.cpp
+ * File:   Texture.cpp
  * Author: jhendl
- *
- * Created on April 16, 2021, 11:57 PM
+ * 
+ * Created on April 25, 2021, 9:34 PM
  */
 
-#include "Model.h"
-#include <Athena/Manager.h>
-
-int main()
-{
-  return 0;
-}
+#include "Texture.h"
 
