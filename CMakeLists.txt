@@ -181,6 +181,7 @@ SET( CPACK_COMPONENT_RELEASE_DESCRIPTION  "Runtime Libraries for the ${CMAKE_PRO
 SET( CPACK_COMPONENT_DEVEL_DEPENDS        release                                                                         )
 INCLUDE( KPackage ) 
 
+ADD_SUBDIRECTORY( ext )
 ADD_SUBDIRECTORY( src )
 
 INSTALL( EXPORT Mars FILE MarsConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT devel )

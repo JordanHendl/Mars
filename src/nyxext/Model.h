@@ -26,7 +26,7 @@
 #include "NyxGPU/NggFile.h"
 #include "NyxGPU/library/Array.h"
 #include "NyxGPU/library/Chain.h"
-#include "NyxGPU/library/Renderer.h"
+#include "NyxGPU/library/Pipeline.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -88,7 +88,7 @@ namespace mars
        * @param pipeline The pipeline to use for rendering.
        * @param chain The chain to record the draw command to.
        */
-      inline void draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& chain ) ;
+      inline void draw( const nyx::Pipeline<Framework>& pipeline, nyx::Chain<Framework>& chain ) ;
       
       /** Method to set the textures of a specific mesh.
        * @param mesh The ID of mesh of this model to apply the texture to.
@@ -253,7 +253,7 @@ namespace mars
   }
 
   template<typename Framework>
-  void Model<Framework>::draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& draw )
+  void Model<Framework>::draw( const nyx::Pipeline<Framework>& pipeline, nyx::Chain<Framework>& draw )
   {
     for( const auto& mesh : this->h_meshes )
     {

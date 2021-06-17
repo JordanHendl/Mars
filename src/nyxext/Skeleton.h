@@ -14,7 +14,7 @@
 #pragma once
 #include <NyxGPU/library/Array.h>
 #include <NyxGPU/library/Chain.h>
-#include <NyxGPU/library/Renderer.h>
+#include <NyxGPU/library/Pipeline.h>
 #include <NyxGPU/NssFile.h>
 #include <glm/glm.hpp>
 #include <vector>
@@ -32,7 +32,7 @@ namespace mars
       bool initialized() const ;
       void setAnimation( unsigned animation ) ;
       void traverse( float delta_time ) ;
-      void bind( nyx::Renderer<Framework>& pipeline, const char* name ) ;
+      void bind( nyx::Pipeline<Framework>& pipeline, const char* name ) ;
       void reset() ;
     private:
       using Bone      = nyx::NssFile::Bone      ;
@@ -149,7 +149,7 @@ namespace mars
   }
 
   template<typename Framework>
-  void Skeleton<Framework>::bind( nyx::Renderer<Framework>& pipeline, const char* name )
+  void Skeleton<Framework>::bind( nyx::Pipeline<Framework>& pipeline, const char* name )
   {
     pipeline.bind( name, this->d_transforms ) ;
   }

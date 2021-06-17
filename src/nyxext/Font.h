@@ -27,7 +27,8 @@
 #include "NyxGPU/library/Array.h"
 #include "NyxGPU/library/Image.h"
 #include "NyxGPU/library/Chain.h"
-#include "NyxGPU/library/Renderer.h"
+#include "NyxGPU/library/Pipeline.h"
+#include <glm/glm.hpp>
 #include <vector>
 #include <string>
 #include <map>
@@ -78,17 +79,19 @@ namespace mars
       inline void reset() ;
       
     private:
-      std::string                                    name         ;
-      nyx::Array<Framework, nyx::NttFile::Character> d_characters ;
-      std::vector<nyx::NttFile::Character>           h_characters ;
-      std::vector<nyx::Image<Framework>>             d_textures   ;
+      void makeVertices() ;
+      std::string                                      name               ;
+      std::map<char, nyx::Array<Framework, glm::vec4>> character_vert_map ;
+      nyx::Array<Framework, nyx::NttFile::Character>   d_characters       ;
+      std::vector<nyx::NttFile::Character>             h_characters       ;
+      std::vector<nyx::Image<Framework>>               d_textures         ;
   };
   
   template<typename Framework>
   Font<Framework>::Font()
   {
     this->d_textures = {} ;
-    this->name     = "" ;
+    this->name       = "" ;
   }
   
   template<typename Framework>
@@ -158,7 +161,7 @@ namespace mars
         this->h_characters[ index ] = character ;
         
         chain.copy( file.characterImage( static_cast<unsigned char>( index ) ), staging ) ;
-        chain.copy( staging, this->d_textures[ index ]                                    ) ;
+        chain.copy( staging, this->d_textures[ index ]                                  ) ;
         chain.submit     () ;
         chain.synchronize() ;
       }
@@ -168,12 +171,23 @@ namespace mars
       chain.synchronize() ;
       
       chain.reset() ;
+      
+      this->makeVertices() ;
     }
     else
     {
       // TODO error.
     }
     file.reset() ;
+  }
+  
+  template<typename Framework>
+  void Font<Framework>::makeVertices()
+  {
+    for( auto& character : this->h_characters )
+    {
+//      this->character_vert_map[ character.]
+    }
   }
   
   template<typename Framework>
@@ -185,7 +199,7 @@ namespace mars
   template<typename Framework>
   const std::vector<nyx::Image<Framework>>& Font<Framework>::textures() const
   {
-    return this->d_textures ;;
+    return this->d_textures ;
   }
   
   template<typename Framework>

@@ -89,6 +89,10 @@ namespace mars
        */
       ~Data() ;
 
+      /** Constructor to allow dangling references.
+       */
+      Data() ;
+
     private:
       
       /** Static dummy object for invalid access returns.
@@ -103,9 +107,6 @@ namespace mars
       template<typename Key, typename Type2>
       friend class Manager ;
       
-      /** Privated constructor so only the factory can create copies of this object.
-       */
-      Data() ;
       
       /** Underlying shared pointer holding this object's data.
        */

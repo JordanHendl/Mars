@@ -19,6 +19,7 @@ IF( ${NyxGPU_FOUND} )
      )
   
   SET( MARS_NYXEXT_INCLUDE_DIRS
+       ${GLM_INCLUDE_DIRS}
      )
   
   SET( MARS_NYXEXT_LIBRARIES
